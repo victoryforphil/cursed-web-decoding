@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
-import { join } from 'path';
+import { join, basename } from 'path';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -13,8 +13,16 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Sanitize filename to prevent directory traversal
-  const sanitizedFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '');
+  // Use basename to prevent directory traversal attacks
+  const sanitizedFilename = basename(filename);
+  
+  // Additional validation: only allow alphanumeric, dots, dashes, and underscores
+  if (!/^[a-zA-Z0-9._-]+$/.test(sanitizedFilename)) {
+    return NextResponse.json(
+      { error: 'Invalid filename format' },
+      { status: 400 }
+    );
+  }
   
   try {
     const videoPath = join(process.cwd(), 'public', 'videos', sanitizedFilename);
